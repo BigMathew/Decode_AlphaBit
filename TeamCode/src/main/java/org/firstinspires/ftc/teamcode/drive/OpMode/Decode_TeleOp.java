@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.drive.OpMode;
 
+import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.allianceCase;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.pedropathing.follower.Follower;
@@ -20,7 +22,7 @@ public class Decode_TeleOp extends LinearOpMode {
     MultipleTelemetry telemetry;
     Systems systems;
 
-    public int allianceCase = 0; //case 0 for red 1 for blue
+
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -39,7 +41,9 @@ public class Decode_TeleOp extends LinearOpMode {
             telemetry.addData("Alliance", allianceCase == 0 ? "Red" : "Blue");
             telemetry.update();
 
-            idle();
+            systems.systemsIsRedAlliance(); //set the isRedAlliance boolean to true or false
+
+            idle();// remove if I cant change alliance more than once
         }
 
         waitForStart();
@@ -48,6 +52,7 @@ public class Decode_TeleOp extends LinearOpMode {
 
         while(opModeIsActive()){
             chasis.run();
+            systems.Run();
 
         }
     }

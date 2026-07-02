@@ -1,12 +1,19 @@
 package org.firstinspires.ftc.teamcode.drive.Structure;
 
-import static org.firstinspires.ftc.teamcode.drive.Structure.InitServoPositions.blockArtifactServo_blockPos;
-import static org.firstinspires.ftc.teamcode.drive.Structure.InitServoPositions.blockArtifactServo_unblockPos;
-import static org.firstinspires.ftc.teamcode.drive.Structure.InitServoPositions.hoodAngleServoInitPose;
-import static org.firstinspires.ftc.teamcode.drive.Structure.InitServoPositions.pushArtifactServo_pushPose;
-import static org.firstinspires.ftc.teamcode.drive.Structure.InitServoPositions.pushArtifactServo_retractPos;
-import static org.firstinspires.ftc.teamcode.drive.Structure.InitServoPositions.robotVelocityThreshold;
-import static org.firstinspires.ftc.teamcode.drive.Structure.InitServoPositions.turretServoInitPose;
+import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.allianceCase;
+import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.blockArtifactServo_blockPos;
+import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.hoodAngleServoInitPose;
+import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.hoodAngleServoMaxPose;
+import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.hoodAngleServoMinPose;
+import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.pushArtifactServo_retractPos;
+import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.robotVelocityThreshold;
+import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.servoPosPerDegree;
+import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.turretServoInitPose;
+import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.turretServoMaxPose;
+import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.turretServoMinPose;
+
+import android.graphics.Point;
+import android.telephony.CarrierConfigManager;
 
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.pedropathing.follower.Follower;
@@ -107,10 +114,27 @@ public class Systems {
     public double robotVelocity;
 
     public boolean isRobotStationary;
+    //public double turretAngle;
 
     public boolean pushServoPosIsPush;
     public boolean blockServoPosIsBlock;
+    public boolean isRedAlliance;
+
+    Point RedBasket = new Point(138,140);
+    Point BlueBasket = new Point(6,140);
+    Point Basket;
+    public void systemsIsRedAlliance(){
+        isRedAlliance = allianceCase == 0;
+
+        if(isRedAlliance){
+            Basket = RedBasket;
+        } else{
+            Basket = BlueBasket;
+        }
+    }
     public void Run(){
+
+
         follower.update();
         llResult = limelight.getLLResult();
 
@@ -145,8 +169,60 @@ public class Systems {
             stopIntake();
         }
 
+        //<---------------------Hood and and turret servo manual movement--------------------->//
+        if(gamepad1.dpadLeftWasPressed() && current_TurretServo_position < turretServoMaxPose){
+            current_TurretServo_position+=0.01;
+            TurretServo.setPosition(current_TurretServo_position);
+        } else if (gamepad1.dpadRightWasPressed() && current_TurretServo_position < turretServoMinPose) {
+            current_TurretServo_position-=0.01;
+            TurretServo.setPosition(current_TurretServo_position);
+        }
+
+        if(gamepad1.dpadUpWasPressed() && current_HoodAngleServo_position-0.05 >= hoodAngleServoMaxPose){
+            current_HoodAngleServo_position -= 0.05;
+            HoodAngleServo.setPosition(current_HoodAngleServo_position);
+        }else if(gamepad1.dpadDownWasPressed() && current_HoodAngleServo_position+0.05>=hoodAngleServoMinPose){
+            current_HoodAngleServo_position+= 0.05;
+            HoodAngleServo.setPosition(current_HoodAngleServo_position);
+        }
+        //<----------------------------------------------------------------------------------->//
 
 
+
+        while(isInShootingZone()){
+            double targetAngle = getTargetAngle(
+                    x_position,
+                    y_position,
+                    Basket.x,
+                    Basket.y);
+
+            double turretAngle = normalizeTurretServo(
+                    targetAngle - headingAngle);
+
+            TurretServo.setPosition(angleToServo(turretAngle));
+        }
+
+    }
+    public double angleToServo(double angle){
+
+        return turretServoInitPose +
+                angle * servoPosPerDegree;
+    }
+
+    public double normalizeTurretServo(double angle){
+        while (angle > 180){
+            angle -=360;
+        }
+        while (angle < -180){
+            angle += 360;
+        }
+        return angle;
+    }
+    public double getTargetAngle(double robotX,double robotY,
+                                 double targetX,double targetY){
+        return Math.toDegrees(
+                Math.atan2(targetY-robotY,
+                        targetX-robotX));
     }
 
     public boolean isInShootingZone(){

@@ -3,7 +3,11 @@ package org.firstinspires.ftc.teamcode.drive.Structure;
 import com.acmerobotics.dashboard.config.Config;
 
 @Config
-public class InitServoPositions {
+public class ConstantValues {
+    //alliance case
+    public static int allianceCase = 0; //0 for red, 1 for blue
+
+
     public static double turretServoInitPose = 0.74;
     public static double turretServoMaxPose = 0.95;
     public static double turretServoMinPose = 0.15;
@@ -18,8 +22,8 @@ public class InitServoPositions {
     public static double pushArtifactServo_pushPose = 0.55;
     public static double pushArtifactServo_retractPos = 0.8;
 
-    // other static values that i might need to change later
 
+    // other static values that I might need to change later
     public static double robotVelocityThreshold = 2.5;
-
+    public static double servoPosPerDegree = 0.24/90;
 }
