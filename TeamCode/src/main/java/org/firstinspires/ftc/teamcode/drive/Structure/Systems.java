@@ -120,10 +120,14 @@ public class Systems {
     public boolean blockServoPosIsBlock;
     public boolean isRedAlliance;
 
+    //Todo check basket coordinates
     Point RedBasket = new Point(138,140);
     Point BlueBasket = new Point(6,140);
+    Point CommonBasket = new Point(72,-138);
     Point Basket;
-    public void systemsIsRedAlliance(){
+    public void systemsIsRedAlliance(){    //also sets the basket coordinates to the correct one based on selected alliance
+
+
         isRedAlliance = allianceCase == 0;
 
         if(isRedAlliance){
@@ -167,6 +171,13 @@ public class Systems {
         }
         if(gamepad1.bWasPressed()){
             stopIntake();
+        }
+        if(gamepad1.guideWasPressed()){
+            if(Basket == BlueBasket || Basket == RedBasket){
+                Basket = CommonBasket;
+            }else{
+                systemsIsRedAlliance();//also sets the basket coordinates to the correct one based on selected alliance
+            }
         }
 
         //<---------------------Hood and and turret servo manual movement--------------------->//
