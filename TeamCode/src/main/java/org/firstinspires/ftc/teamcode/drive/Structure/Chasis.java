@@ -12,24 +12,31 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.teamcode.drive.OpMode.Decode_TeleOp;
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 
 public class Chasis {
     Gamepad gamepad;
-    Follower follower;
+     Follower  CHASISfollower;
+    //HardwareMap hardwareMap;
+   // Decode_TeleOp decode_teleOp;
 
-    public Chasis(Follower follower, Gamepad gamepad){
+    public Chasis(Gamepad gamepad,Follower follower){
         this.gamepad = gamepad;
-        this.follower = follower;
+        this.CHASISfollower = follower;
     }
-
+    public void setTeleopDrive(){
+        CHASISfollower.startTeleOpDrive(true);
+    }
     public void run(){
-        follower.setTeleOpDrive(
+
+        CHASISfollower.setTeleOpDrive(
                 -gamepad.left_stick_y,
                 -gamepad.left_stick_x,
                 -gamepad.right_stick_x,
                 true
         );
-        follower.update();
+        CHASISfollower.update();
     }
 }

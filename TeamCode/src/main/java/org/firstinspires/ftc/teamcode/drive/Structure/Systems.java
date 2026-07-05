@@ -27,12 +27,15 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.drive.OpMode.Decode_TeleOp;
 
 public class Systems {
     public LimelightVision limelight = new LimelightVision();
     Gamepad gamepad1, gamepad2;
     MultipleTelemetry telemetry;
+    Decode_TeleOp decode_teleOp;
     Follower follower;
 
     DcMotorEx Intake_LeftMotor;
@@ -49,11 +52,11 @@ public class Systems {
     Servo PushArtifactServo;
 
 
-    public Systems(HardwareMap hwmap, Gamepad gmpd, Gamepad gmpd2, MultipleTelemetry telemetrys ,Follower follower){
+    public Systems(HardwareMap hwmap, Gamepad gmpd, Gamepad gmpd2, Telemetry telemetrys , Follower TeleopFollower){
         gamepad1 = gmpd;
         gamepad2 = gmpd2;
-        this.telemetry = telemetrys;
-        this.follower = follower;
+        //this.telemetry = telemetrys;
+        this.follower = TeleopFollower;
 
         limelight.init(hwmap);
 
@@ -121,10 +124,10 @@ public class Systems {
     public boolean isRedAlliance;
 
     //Todo check basket coordinates
-    Point RedBasket = new Point(138,140);
-    Point BlueBasket = new Point(6,140);
+    public Point RedBasket = new Point(138,140);
+    public Point BlueBasket = new Point(6,140);
     Point CommonBasket = new Point(72,-138);
-    Point Basket;
+    public Point Basket;
     public void systemsIsRedAlliance(){    //also sets the basket coordinates to the correct one based on selected alliance
 
 
@@ -181,26 +184,33 @@ public class Systems {
         }
 
         //<---------------------Hood and and turret servo manual movement--------------------->//
-        if(gamepad1.dpadLeftWasPressed() && current_TurretServo_position < turretServoMaxPose){
-            current_TurretServo_position+=0.01;
-            TurretServo.setPosition(current_TurretServo_position);
-        } else if (gamepad1.dpadRightWasPressed() && current_TurretServo_position < turretServoMinPose) {
+        if(gamepad1.dpadLeftWasPressed() && current_TurretServo_position > turretServoMinPose){
             current_TurretServo_position-=0.01;
             TurretServo.setPosition(current_TurretServo_position);
         }
+        if (gamepad1.dpadRightWasPressed() && current_TurretServo_position < turretServoMaxPose) {
+            current_TurretServo_position+=0.01;
+            TurretServo.setPosition(current_TurretServo_position);
+        }
 
-        if(gamepad1.dpadUpWasPressed() && current_HoodAngleServo_position-0.05 >= hoodAngleServoMaxPose){
+        if(gamepad1.dpadUpWasPressed() && current_HoodAngleServo_position-0.05 <= hoodAngleServoMaxPose){
             current_HoodAngleServo_position -= 0.05;
             HoodAngleServo.setPosition(current_HoodAngleServo_position);
-        }else if(gamepad1.dpadDownWasPressed() && current_HoodAngleServo_position+0.05>=hoodAngleServoMinPose){
+        }
+        if(gamepad1.dpadDownWasPressed() && current_HoodAngleServo_position+0.05>=hoodAngleServoMinPose){
             current_HoodAngleServo_position+= 0.05;
             HoodAngleServo.setPosition(current_HoodAngleServo_position);
         }
         //<----------------------------------------------------------------------------------->//
 
 
+        //<--------------------- LimeLight camera position reset --------------------->//
+        if(gamepad1.yWasPressed()){
+            resetPositionUsingLimeLight();
+        }
+        //<--------------------------------------------------------------------------->//
 
-        while(isInShootingZone()){
+        if(isInShootingZone()){
             double targetAngle = getTargetAngle(
                     x_position,
                     y_position,
@@ -211,12 +221,13 @@ public class Systems {
                     targetAngle - headingAngle);
 
             TurretServo.setPosition(angleToServo(turretAngle));
+            current_TurretServo_position = TurretServo.getPosition();
         }
 
     }
     public double angleToServo(double angle){
 
-        return turretServoInitPose +
+        return turretServoInitPose -
                 angle * servoPosPerDegree;
     }
 

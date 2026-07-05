@@ -1,15 +1,16 @@
 package org.firstinspires.ftc.teamcode.drive.Structure.FlywheelAdvanced;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-
+@Config
 public class Flywheel {
     private DcMotorEx Outtake_LeftMotor;
     private DcMotorEx Outtake_RightMotor;
 
-    private double encoderCPM = 28;
+    static double  encoderCPM = 28;
     private double gearRatio = 1;
 
     private double kV,kS,kP;
@@ -29,7 +30,7 @@ public class Flywheel {
         Outtake_LeftMotor.setPower(power);
     }
     public double getTicksPerSec(){
-        return Outtake_LeftMotor.getVelocity();
+        return Outtake_RightMotor.getVelocity();
     }
 
     public double getRpm(){

@@ -10,7 +10,7 @@ public class ConstantValues {
 
     public static double turretServoInitPose = 0.74;
     public static double turretServoMaxPose = 0.95;
-    public static double turretServoMinPose = 0.15;
+    public static double turretServoMinPose = 0.46;
 
     public static double hoodAngleServoInitPose = 0.45;
     public static double hoodAngleServoMaxPose = 0.15;
@@ -25,5 +25,5 @@ public class ConstantValues {
 
     // other static values that I might need to change later
     public static double robotVelocityThreshold = 2.5;
-    public static double servoPosPerDegree = 0.24/90;
+    public static double servoPosPerDegree = (0.74-0.51)/90;
 }
