@@ -3,7 +3,9 @@ package org.firstinspires.ftc.teamcode.drive.OpMode;
 import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.allianceCase;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.follower.Follower;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -15,6 +17,8 @@ import org.firstinspires.ftc.teamcode.drive.Structure.Systems;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @TeleOp
+@Configurable
+@Config
 public class Decode_TeleOp extends LinearOpMode {
 
 
@@ -81,6 +85,24 @@ public class Decode_TeleOp extends LinearOpMode {
             telemetrys.addData("current hoodAngleServo position",systems.current_HoodAngleServo_position);
             telemetrys.addData("current turret servo positon",systems.current_TurretServo_position);
             telemetrys.addData("Flywheel power",systems.currentFlywheelPower);
+            telemetrys.addData("Shoot count",systems.shotCount);
+            telemetrys.addData("Shooter state", systems.shootState);
+            telemetrys.addData("Flywheel Velocity", systems.Outtake_RightMotor.getVelocity());
+            //telemetrys.addData("Flywheel target RPM", Systems.targetFlywheelRPM);
+            telemetrys.addData("Flywheel rpm", systems.currentFlywheelRpm);
+
+            telemetrys.addLine();
+            telemetrys.addLine();
+            telemetrys.addLine();
+            telemetrys.addLine();
+            telemetrys.addData("Basket Distance", systems.basketDistance);
+            //telemetrys.addData("selected RPM", Systems.targetFlywheelRPM);
+            telemetrys.addData("Current Hood Servo Positon", systems.current_HoodAngleServo_position);
+
+            if(gamepad1.dpadUpWasPressed()){
+                telemetry.addLine("DPAD UP");
+            }
+
 
             telemetrys.update();
         }

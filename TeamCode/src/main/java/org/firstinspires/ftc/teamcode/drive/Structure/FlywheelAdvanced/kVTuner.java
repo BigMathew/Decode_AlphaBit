@@ -3,11 +3,13 @@ package org.firstinspires.ftc.teamcode.drive.Structure.FlywheelAdvanced;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 @Config
 @TeleOp
+@Disabled
 public class kVTuner extends OpMode {
     //sa fie pana cand ajunge la rpm dorit fara kP sa il mentina acolo
     Flywheel flywheel = new Flywheel();

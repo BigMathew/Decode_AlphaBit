@@ -2,9 +2,11 @@ package org.firstinspires.ftc.teamcode.drive.Structure;
 
 import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.allianceCase;
 import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.blockArtifactServo_blockPos;
+import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.blockArtifactServo_unblockPos;
 import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.hoodAngleServoInitPose;
 import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.hoodAngleServoMaxPose;
 import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.hoodAngleServoMinPose;
+import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.pushArtifactServo_pushPose;
 import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.pushArtifactServo_retractPos;
 import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.robotVelocityThreshold;
 import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.servoPosPerDegree;
@@ -13,9 +15,10 @@ import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.turr
 import static org.firstinspires.ftc.teamcode.drive.Structure.ConstantValues.turretServoMinPose;
 
 import android.graphics.Point;
-import android.telephony.CarrierConfigManager;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
@@ -26,11 +29,14 @@ import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.drive.OpMode.Decode_TeleOp;
 
+@Config
+@Configurable
 public class Systems {
     public LimelightVision limelight = new LimelightVision();
     Gamepad gamepad1, gamepad2;
@@ -41,7 +47,7 @@ public class Systems {
     DcMotorEx Intake_LeftMotor;
     DcMotorEx Intake_RightMotor;
     DcMotorEx Outtake_LeftMotor;
-    DcMotorEx Outtake_RightMotor;
+    public DcMotorEx Outtake_RightMotor;
 
     DistanceSensor leftDistanceSensor;
     DistanceSensor rightDistanceSensor;
@@ -82,7 +88,6 @@ public class Systems {
         Outtake_LeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         Outtake_RightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
-        //Todo change the names of the servos in driver hub to more accurately represent the code
         TurretServo = hwmap.get(Servo.class,"LeftTurret");
         HoodAngleServo = hwmap.get(Servo.class, "AngleTurret");
         BlockArtifactServo = hwmap.get(Servo.class, "BlockArtifact");
@@ -116,7 +121,7 @@ public class Systems {
     public double LLYPosition;
     public double robotVelocity;
     public double currentFlywheelPower = 0;
-    public double targetFlywheelVelocity;
+    public static double targetFlywheelVelocity = 1500;
     public double basketDistance;
     public boolean isRobotStationary;
     //public double turretAngle;
@@ -124,6 +129,22 @@ public class Systems {
     public boolean pushServoPosIsPush;
     public boolean blockServoPosIsBlock;
     public boolean isRedAlliance;
+    public double currentFlywheelRpm;
+    public static double targetFlywheelRPM = 0;
+
+    public static double kV = 0.0002;
+    public static double kS = 0.09;
+    public static double kP = 0.001;
+
+    public ElapsedTime timer = new ElapsedTime();
+
+
+    public enum ShooterState{
+        IDLE,
+        SPIN_UP,
+        FEED
+    }
+
 
 
     //Todo check basket coordinates
@@ -146,6 +167,7 @@ public class Systems {
 
 
         follower.update();
+        updateFlywheel();
         llResult = limelight.getLLResult();
 
         leftDistanceSensor_distance = leftDistanceSensor.getDistance(DistanceUnit.CM);
@@ -165,18 +187,14 @@ public class Systems {
 
         basketDistance = Math.hypot(Basket.x-x_position , Basket.y-y_position);
 
-        if(robotVelocity < robotVelocityThreshold){
-            isRobotStationary = true;
-        }else{
-            isRobotStationary = false;
-        }
+        currentFlywheelRpm = getRpm();
 
-        if(gamepad1.xWasPressed()){
-            resetPositionUsingLimeLight();
-        }
+        isRobotStationary = robotVelocity < robotVelocityThreshold;
+
 
         if(gamepad1.leftTriggerWasPressed()){
             intakeArtifacts();
+            shotCount = 0;
         }
         if(gamepad1.leftBumperWasPressed()){
             stopIntake();
@@ -202,11 +220,11 @@ public class Systems {
             TurretServo.setPosition(current_TurretServo_position);
         }
 
-        if(gamepad1.dpadUpWasPressed() && current_HoodAngleServo_position-0.05 <= hoodAngleServoMaxPose){
+        if(gamepad1.dpadUpWasPressed() && current_HoodAngleServo_position-0.05 >= hoodAngleServoMaxPose){
             current_HoodAngleServo_position -= 0.05;
             HoodAngleServo.setPosition(current_HoodAngleServo_position);
         }
-        if(gamepad1.dpadDownWasPressed() && current_HoodAngleServo_position+0.05>=hoodAngleServoMinPose){
+        if(gamepad1.dpadDownWasPressed() && current_HoodAngleServo_position+0.05 <= hoodAngleServoMinPose ){
             current_HoodAngleServo_position+= 0.05;
             HoodAngleServo.setPosition(current_HoodAngleServo_position);
         }
@@ -216,23 +234,23 @@ public class Systems {
         if(gamepad1.bWasPressed()){
             if(currentFlywheelPower<1){
                 currentFlywheelPower+=0.1;
-                setFlyWheelMotorPower(currentFlywheelPower);
+               // setFlyWheelMotorPower(currentFlywheelPower);
             }else{
                 currentFlywheelPower = 1;
-                setFlyWheelMotorPower(currentFlywheelPower);
+                //setFlyWheelMotorPower(currentFlywheelPower);
             }
         }
         if(gamepad1.xWasPressed()){
             if(currentFlywheelPower>0){
                 currentFlywheelPower-=0.1;
-                setFlyWheelMotorPower(currentFlywheelPower);
+                //setFlyWheelMotorPower(currentFlywheelPower);
             }else{
                 currentFlywheelPower = 0;
-                setFlyWheelMotorPower(currentFlywheelPower);
+                //setFlyWheelMotorPower(currentFlywheelPower);
             }
         }
         if(gamepad1.rightTriggerWasPressed()){
-            setFlyWheelMotorPower(targetFlywheelVelocity);//todo add here the calculation for flywheel speed using formula
+            setFlyWheelMotorPower(currentFlywheelPower);//todo add here the calculation for flywheel speed using formula
         }
         //<---------------------------------------------------->//
 
@@ -251,18 +269,93 @@ public class Systems {
             TurretServo.setPosition(angleToServo(turretAngle));
             current_TurretServo_position = TurretServo.getPosition();
 
-            calculateFltwheelMotorPower(basketDistance);
+            calculateFlywheelMotorPowerRPM(basketDistance);
             calculateHoodAngle(basketDistance);
+
+            double feedForward = (kV * targetFlywheelRPM) + kS;
+            double error = targetFlywheelRPM - currentFlywheelRpm;
+            double feedBack = error * kP;
 
         }
 
+        if(gamepad1.aWasPressed()){
+            BlockArtifactServo.setPosition(blockArtifactServo_unblockPos);
+            //Outtake_RightMotor.setVelocity(targetFlywheelVelocity);
+            //Outtake_LeftMotor.setVelocity(targetFlywheelVelocity);
+            shotCount = 0;
+            shootState = ShooterState.SPIN_UP;
+        }
+
+        switch (shootState){
+            case SPIN_UP:
+                if(Math.abs(Outtake_RightMotor.getVelocity() - targetFlywheelVelocity) < 30){
+
+                    BlockArtifactServo.setPosition(blockArtifactServo_unblockPos);
+
+                    if(shotCount == 2){
+                        PushArtifactServo.setPosition(pushArtifactServo_pushPose);
+                    }
+
+                    timer.reset();
+
+                    Intake_LeftMotor.setPower(1);
+                    Intake_RightMotor.setPower(1);
+
+
+                    shootState = ShooterState.FEED;
+                }
+                break;
+            case FEED:
+                if (Outtake_RightMotor.getVelocity() < targetFlywheelVelocity - rpmDrop || timer.milliseconds()>500){
+                    Intake_RightMotor.setPower(0);
+                    Intake_LeftMotor.setPower(0);
+
+                    BlockArtifactServo.setPosition(blockArtifactServo_blockPos);
+
+                    shotCount++;
+
+                    if(shotCount >= 3){
+                        shootState = ShooterState.IDLE;
+                    }else{
+                        shootState = ShooterState.SPIN_UP;
+                    }
+                }
+                break;
+            case IDLE:
+                targetFlywheelRPM = 500;
+                PushArtifactServo.setPosition(pushArtifactServo_retractPos);
+                BlockArtifactServo.setPosition(blockArtifactServo_blockPos);
+                Outtake_RightMotor.setVelocity(0);
+                Outtake_LeftMotor.setVelocity(0);
+                break;
+        }
+
     }
-    public void calculateFltwheelMotorPower(double distance){
+    public ShooterState shootState = ShooterState.IDLE;
+    public int shotCount = 0;
+    public static int rpmDrop = 200;
+
+    public void calculateFlywheelMotorPowerRPM(double distance){
         double power;
         power = 0*distance;//todo add the tested function
-        targetFlywheelVelocity = power;
-        //setFlyWheelMotorPower(power);
+        //targetFlywheelRPM = power;
+
     }
+
+    public void updateFlywheel() {
+
+        double currentRPM = getRpm();
+
+        double error = targetFlywheelRPM - currentRPM;
+
+        double power = kS + kV * targetFlywheelRPM + kP * error;
+
+        power = Math.max(0, Math.min(1, power));
+
+        Outtake_LeftMotor.setPower(power);
+        Outtake_RightMotor.setPower(power);
+    }
+
     public void calculateHoodAngle(double distance){
         double hoodAnglePosition;
 
@@ -369,4 +462,13 @@ public class Systems {
         double normalized = normalizeHeadingTo360(limelightHeading);
         return normalizeHeadingTo360(normalized - 90);
     }
+    public double getTicksPerSec(){
+        return Outtake_RightMotor.getVelocity();
+    }
+
+    public double getRpm(){
+        double encoderCPM = 28;
+        return ((getTicksPerSec()/encoderCPM)*60);// / gearRatio;
+    }
+
 }

@@ -3,17 +3,20 @@ package org.firstinspires.ftc.teamcode.drive.Structure.FlywheelAdvanced;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 @Config
 @TeleOp
+@Disabled
+
 public class kPTuner extends OpMode {
     Flywheel flywheel = new Flywheel();
 
-    public static double kV = 0.0002; // aici pune kP de dincolo
-    public static double kS = 0.09; //aici pune kS de dincolo
-    public static double kP = 0.0;
+    public static double kV = 0.0002;
+    public static double kS = 0.09;
+    public static double kP = 0.001;
 
     public static double goalRPM = 0;// aici sa pun cat vr la maxim testez singur si dupa verific daca si cum merge cat vr sa traga maxim pot pune 2 valori in dashboard sa vad daca da scale corect
 
