@@ -5,12 +5,15 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+
 @Config
 public class Flywheel {
     private DcMotorEx Outtake_LeftMotor;
     private DcMotorEx Outtake_RightMotor;
 
-    static double  encoderCPM = 28;
+    static double  encoderCPM = 28; //poate trebuie *4 sa fie pt cpr nu ppr
     private double gearRatio = 1;
 
     private double kV,kS,kP;
@@ -34,7 +37,7 @@ public class Flywheel {
     }
 
     public double getRpm(){
-        return ((getTicksPerSec()/encoderCPM)*60) / gearRatio;
+        return ((getTicksPerSec()/encoderCPM)*60);// / gearRatio;
     }
 
 

@@ -80,6 +80,7 @@ public class Decode_TeleOp extends LinearOpMode {
             telemetrys.addData("robot is stationary",systems.isRobotStationary);
             telemetrys.addData("current hoodAngleServo position",systems.current_HoodAngleServo_position);
             telemetrys.addData("current turret servo positon",systems.current_TurretServo_position);
+            telemetrys.addData("Flywheel power",systems.currentFlywheelPower);
 
             telemetrys.update();
         }

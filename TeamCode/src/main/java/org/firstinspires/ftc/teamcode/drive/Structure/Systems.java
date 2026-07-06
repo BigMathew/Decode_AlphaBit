@@ -115,13 +115,16 @@ public class Systems {
     public double LLXPosition;
     public double LLYPosition;
     public double robotVelocity;
-
+    public double currentFlywheelPower = 0;
+    public double targetFlywheelVelocity;
+    public double basketDistance;
     public boolean isRobotStationary;
     //public double turretAngle;
 
     public boolean pushServoPosIsPush;
     public boolean blockServoPosIsBlock;
     public boolean isRedAlliance;
+
 
     //Todo check basket coordinates
     public Point RedBasket = new Point(138,140);
@@ -160,6 +163,8 @@ public class Systems {
 
         robotVelocity = Math.abs(follower.getVelocity().getXComponent()) + Math.abs(follower.getVelocity().getYComponent());
 
+        basketDistance = Math.hypot(Basket.x-x_position , Basket.y-y_position);
+
         if(robotVelocity < robotVelocityThreshold){
             isRobotStationary = true;
         }else{
@@ -169,11 +174,15 @@ public class Systems {
         if(gamepad1.xWasPressed()){
             resetPositionUsingLimeLight();
         }
-        if(gamepad1.aWasPressed()){
+
+        if(gamepad1.leftTriggerWasPressed()){
             intakeArtifacts();
         }
-        if(gamepad1.bWasPressed()){
+        if(gamepad1.leftBumperWasPressed()){
             stopIntake();
+        }
+        if(gamepad1.rightBumperWasPressed()){
+            stopFlywheel();
         }
         if(gamepad1.guideWasPressed()){
             if(Basket == BlueBasket || Basket == RedBasket){
@@ -203,6 +212,30 @@ public class Systems {
         }
         //<----------------------------------------------------------------------------------->//
 
+        //<--------------------- Flywheel --------------------->//
+        if(gamepad1.bWasPressed()){
+            if(currentFlywheelPower<1){
+                currentFlywheelPower+=0.1;
+                setFlyWheelMotorPower(currentFlywheelPower);
+            }else{
+                currentFlywheelPower = 1;
+                setFlyWheelMotorPower(currentFlywheelPower);
+            }
+        }
+        if(gamepad1.xWasPressed()){
+            if(currentFlywheelPower>0){
+                currentFlywheelPower-=0.1;
+                setFlyWheelMotorPower(currentFlywheelPower);
+            }else{
+                currentFlywheelPower = 0;
+                setFlyWheelMotorPower(currentFlywheelPower);
+            }
+        }
+        if(gamepad1.rightTriggerWasPressed()){
+            setFlyWheelMotorPower(targetFlywheelVelocity);//todo add here the calculation for flywheel speed using formula
+        }
+        //<---------------------------------------------------->//
+
 
         //<--------------------- LimeLight camera position reset --------------------->//
         if(gamepad1.yWasPressed()){
@@ -211,19 +244,40 @@ public class Systems {
         //<--------------------------------------------------------------------------->//
 
         if(isInShootingZone()){
-            double targetAngle = getTargetAngle(
-                    x_position,
-                    y_position,
-                    Basket.x,
-                    Basket.y);
+            double targetAngle = getTargetAngle(x_position, y_position, Basket.x, Basket.y);
 
-            double turretAngle = normalizeTurretServo(
-                    targetAngle - headingAngle);
+            double turretAngle = normalizeTurretServo(targetAngle - headingAngle);
 
             TurretServo.setPosition(angleToServo(turretAngle));
             current_TurretServo_position = TurretServo.getPosition();
+
+            calculateFltwheelMotorPower(basketDistance);
+            calculateHoodAngle(basketDistance);
+
         }
 
+    }
+    public void calculateFltwheelMotorPower(double distance){
+        double power;
+        power = 0*distance;//todo add the tested function
+        targetFlywheelVelocity = power;
+        //setFlyWheelMotorPower(power);
+    }
+    public void calculateHoodAngle(double distance){
+        double hoodAnglePosition;
+
+        hoodAnglePosition = 0*distance;
+
+//        if(hoodAnglePosition > 0.75){
+//            hoodAnglePosition = 0.75;
+//        }else if(hoodAnglePosition < 0.25){
+//            hoodAnglePosition = 0.25;
+//        }adauga daca este necesar si imi iese din roata
+    }
+    public void setFlyWheelMotorPower(double power){
+        Outtake_LeftMotor.setPower(power);
+        Outtake_RightMotor.setPower(power);
+        currentFlywheelPower = power;
     }
     public double angleToServo(double angle){
 
@@ -268,6 +322,11 @@ public class Systems {
     public void stopIntake(){
         Intake_RightMotor.setPower(0);
         Intake_LeftMotor.setPower(0);
+    }
+    public void stopFlywheel(){
+        Outtake_LeftMotor.setPower(0);
+        Outtake_RightMotor.setPower(0);
+        currentFlywheelPower = 0;
     }
     public void intakeArtifacts(){
         BlockArtifactServo.setPosition(blockArtifactServo_blockPos);
