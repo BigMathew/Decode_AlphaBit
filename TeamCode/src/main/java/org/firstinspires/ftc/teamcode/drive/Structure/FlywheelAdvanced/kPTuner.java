@@ -9,12 +9,12 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 @Config
 @TeleOp
-@Disabled
+//@Disabled
 
 public class kPTuner extends OpMode {
     Flywheel flywheel = new Flywheel();
 
-    public static double kV = 0.0002;
+    public static double kV = 0.000152;
     public static double kS = 0.09;
     public static double kP = 0.001;
 

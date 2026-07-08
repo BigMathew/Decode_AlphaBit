@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 @TeleOp
 @Config
-@Disabled
+//@Disabled
 
 public class kSTunner extends OpMode {
     // sa sa fie kS pana cand aproape porneste de pe loc da nu chiar aproape e acolo

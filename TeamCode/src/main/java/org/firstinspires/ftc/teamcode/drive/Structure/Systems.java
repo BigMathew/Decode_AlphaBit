@@ -131,6 +131,10 @@ public class Systems {
     public boolean isRedAlliance;
     public double currentFlywheelRpm;
     public static double targetFlywheelRPM = 0;
+    public static double deltaRPMLoss = 100;
+    public double calcualtedRPM=0;
+
+    public double targetHoodAngle;
 
     public static double kV = 0.0002;
     public static double kS = 0.09;
@@ -148,9 +152,9 @@ public class Systems {
 
 
     //Todo check basket coordinates
-    public Point RedBasket = new Point(138,140);
-    public Point BlueBasket = new Point(6,140);
-    Point CommonBasket = new Point(72,-138);
+    public Point RedBasket = new Point(130,135);
+    public Point BlueBasket = new Point(14,135);
+    Point CommonBasket = new Point(72,-135);
     public Point Basket;
     public void systemsIsRedAlliance(){    //also sets the basket coordinates to the correct one based on selected alliance
 
@@ -163,6 +167,7 @@ public class Systems {
             Basket = BlueBasket;
         }
     }
+    public static double manualRpm = 0;
     public void Run(){
 
 
@@ -201,6 +206,7 @@ public class Systems {
         }
         if(gamepad1.rightBumperWasPressed()){
             stopFlywheel();
+            shootState = ShooterState.IDLE;
         }
         if(gamepad1.guideWasPressed()){
             if(Basket == BlueBasket || Basket == RedBasket){
@@ -230,7 +236,6 @@ public class Systems {
         }
         //<----------------------------------------------------------------------------------->//
 
-        //<--------------------- Flywheel --------------------->//
         if(gamepad1.bWasPressed()){
             if(currentFlywheelPower<1){
                 currentFlywheelPower+=0.1;
@@ -252,7 +257,6 @@ public class Systems {
         if(gamepad1.rightTriggerWasPressed()){
             setFlyWheelMotorPower(currentFlywheelPower);//todo add here the calculation for flywheel speed using formula
         }
-        //<---------------------------------------------------->//
 
 
         //<--------------------- LimeLight camera position reset --------------------->//
@@ -265,30 +269,35 @@ public class Systems {
             double targetAngle = getTargetAngle(x_position, y_position, Basket.x, Basket.y);
 
             double turretAngle = normalizeTurretServo(targetAngle - headingAngle);
-
-            TurretServo.setPosition(angleToServo(turretAngle));
+            double turretPos = angleToServo(turretAngle);
+            if (turretPos > turretServoMaxPose) {
+                turretPos = turretServoMaxPose;
+            } else if (turretPos < turretServoMinPose) {
+                turretPos = turretServoMinPose;
+            }
+            TurretServo.setPosition(turretPos);
             current_TurretServo_position = TurretServo.getPosition();
 
-            calculateFlywheelMotorPowerRPM(basketDistance);
             calculateHoodAngle(basketDistance);
+            HoodAngleServo.setPosition(targetHoodAngle);
+            calculateFlywheelMotorPowerRPM(basketDistance);
 
-            double feedForward = (kV * targetFlywheelRPM) + kS;
-            double error = targetFlywheelRPM - currentFlywheelRpm;
-            double feedBack = error * kP;
+
 
         }
 
         if(gamepad1.aWasPressed()){
+
+            targetFlywheelRPM  = calcualtedRPM;
             BlockArtifactServo.setPosition(blockArtifactServo_unblockPos);
-            //Outtake_RightMotor.setVelocity(targetFlywheelVelocity);
-            //Outtake_LeftMotor.setVelocity(targetFlywheelVelocity);
             shotCount = 0;
             shootState = ShooterState.SPIN_UP;
+            timer.reset();
         }
 
         switch (shootState){
             case SPIN_UP:
-                if(Math.abs(Outtake_RightMotor.getVelocity() - targetFlywheelVelocity) < 30){
+                if(Math.abs(getRpm() - targetFlywheelRPM) < deltaRPMLoss || timer.milliseconds()>2500){
 
                     BlockArtifactServo.setPosition(blockArtifactServo_unblockPos);
 
@@ -306,11 +315,11 @@ public class Systems {
                 }
                 break;
             case FEED:
-                if (Outtake_RightMotor.getVelocity() < targetFlywheelVelocity - rpmDrop || timer.milliseconds()>500){
+                if (getRpm() < targetFlywheelRPM - rpmDrop || timer.milliseconds()>500){
                     Intake_RightMotor.setPower(0);
                     Intake_LeftMotor.setPower(0);
 
-                    BlockArtifactServo.setPosition(blockArtifactServo_blockPos);
+                    //BlockArtifactServo.setPosition(blockArtifactServo_blockPos);
 
                     shotCount++;
 
@@ -322,24 +331,29 @@ public class Systems {
                 }
                 break;
             case IDLE:
-                targetFlywheelRPM = 500;
+                targetFlywheelRPM = 1000;
                 PushArtifactServo.setPosition(pushArtifactServo_retractPos);
                 BlockArtifactServo.setPosition(blockArtifactServo_blockPos);
-                Outtake_RightMotor.setVelocity(0);
-                Outtake_LeftMotor.setVelocity(0);
+
                 break;
         }
 
     }
     public ShooterState shootState = ShooterState.IDLE;
     public int shotCount = 0;
-    public static int rpmDrop = 200;
+    public static int rpmDrop = 250;
 
-    public void calculateFlywheelMotorPowerRPM(double distance){
-        double power;
-        power = 0*distance;//todo add the tested function
-        //targetFlywheelRPM = power;
 
+    public void calculateFlywheelMotorPowerRPM(double distance) {
+        double rpm;
+
+        rpm = 0.0000154195 * Math.pow(distance, 4)
+                - 0.00618559 * Math.pow(distance, 3)
+                + 0.869772 * Math.pow(distance, 2)
+                - 32.94057 * distance
+                + 3258.7466;
+
+        calcualtedRPM = rpm;
     }
 
     public void updateFlywheel() {
@@ -359,7 +373,12 @@ public class Systems {
     public void calculateHoodAngle(double distance){
         double hoodAnglePosition;
 
-        hoodAnglePosition = 0*distance;
+        hoodAnglePosition =
+                -(3.01286e-7) * Math.pow(distance, 3)
+                        + 0.000137601 * Math.pow(distance, 2)
+                        - 0.0218388 * distance
+                        + 1.3885;
+        targetHoodAngle = hoodAnglePosition;
 
 //        if(hoodAnglePosition > 0.75){
 //            hoodAnglePosition = 0.75;

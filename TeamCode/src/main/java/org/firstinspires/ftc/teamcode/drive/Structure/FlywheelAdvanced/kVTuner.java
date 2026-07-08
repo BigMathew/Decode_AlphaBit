@@ -9,12 +9,12 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 @Config
 @TeleOp
-@Disabled
+//@Disabled
 public class kVTuner extends OpMode {
     //sa fie pana cand ajunge la rpm dorit fara kP sa il mentina acolo
     Flywheel flywheel = new Flywheel();
 
-    public static double kV = 0.0002; // schimba in 0.01 daca nu merge din prima
+    public static double kV = 0.000152; // schimba in 0.01 daca nu merge din prima
     public static double kS = 0.09; //aici pune kS de dincolo
 
     public static double goalRPM = 0;// aici sa pun cat vr la maxim testez singur si dupa verific daca si cum merge cat vr sa traga maxim pot pune 2 valori in dashboard sa vad daca da scale corect
